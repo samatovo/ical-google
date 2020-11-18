@@ -1,0 +1,28 @@
+BEGIN:VCALENDAR
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:test
+X-WR-TIMEZONE:Europe/London
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:20201118
+DTEND;VALUE=DATE:20201119
+DTSTAMP:20201118T120852Z
+UID:1ogacqth4l53gqdttj4t9n1lm3@google.com
+CREATED:20201118T110747Z
+DESCRIPTION:Lorem ipsum dolor sit amet\, consectetur adipiscing elit\, sed 
+ do eiusmod tempor incididunt ut labore et dolore magna aliqua\; Ut enim ad 
+ minim veniam\, quis nostrud exercitation ullamco laboris nisi ut aliquip ex
+  ea commodo consequat.\nDuis aute irure dolor in reprehenderit in voluptate 
+ velit esse cillum dolore eu fugiat nulla pariatur\; Excepteur sint occaecat
+  cupidatat non proident\, sunt in culpa qui officia deserunt mollit anim id
+  est laborum
+LAST-MODIFIED:20201118T120829Z
+LOCATION:
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Long description with escapes
+TRANSP:TRANSPARENT
+END:VEVENT
+END:VCALENDAR
