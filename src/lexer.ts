@@ -27,10 +27,12 @@ function cleanList(safeList: string[]): string[] {
   return safeList.map(clean)
 }
 
-type IcsLine = {
+export type IcsLine = {
+  line: string
   name: string
-  params: string[]
+  params: {[key: string]: string}
   values: string[]
+  value: string
 }
 
 export function lexLine(icsLine: string): IcsLine {
@@ -38,11 +40,17 @@ export function lexLine(icsLine: string): IcsLine {
 
   const [nameParams, ...valuesParts] = icsLineSafe.split(':')
   const value = valuesParts.join(':')
-  const values = value.split(',')
-  const [name, ...params] = nameParams.split(';')
+  const values = cleanList(value.split(','))
+  const [name, ...paramsList] = nameParams.split(';')
+  const cleanParams = cleanList(paramsList)
+  const params = cleanParams
+    .map(str => str.split('='))
+    .reduce((acc, [k, v]) =>({...acc, [k]: v}), {})
   return {
+    get line() { return name + cleanParams.map(p => `;${p}`).join() + ":" + values.join(',')},
     name: clean(name),
-    params: cleanList(params),
-    values: cleanList(values),
+    params,
+    values,
+    get value(){ return  values[0] }
   }
 }

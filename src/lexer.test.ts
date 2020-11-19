@@ -4,7 +4,14 @@ import {lex, lexLine, clean, safe} from './lexer'
 const noEvents = readFileSync('./src/examples/no-events.ics').toString()
 const longDesc = readFileSync('./src/examples/long-desc.ics').toString()
 
-const unit = function<T>(x: T){ return x}
+test('lexing no-events', () => {
+  expect(lex(noEvents).length).toBe(27)
+})
+
+test('lexing long desc (condensing lines)', () => {
+  expect(lex(longDesc).length).toBe(23)
+})
+
 
 test('ics -> safe -> cleam', () => {
   expect(clean(safe(''))).toBe('')
@@ -18,14 +25,6 @@ test('ics -> safe -> cleam', () => {
   expect(clean(safe('left∑sumright'))).toBe('left∑sumright')
 })
 
-test('parsing no-events', () => {
-  expect(lex(noEvents).length).toBe(27)
-})
-
-test('parsing long desc (condensing lines)', () => {
-  expect(lex(longDesc).length).toBe(23)
-})
-
 test('parsing long desc (escaping comma, semicolon and new line)', () => {
   expect(lex(longDesc)[13].name).toBe("DESCRIPTION")
   //expect(parse(longDesc)[13]).toBe("DESCRIPTION:Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua; Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur; Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum")
@@ -35,7 +34,7 @@ test('parsing long desc (escaping comma, semicolon and new line)', () => {
 test('lexing a line with no params', () => {
   const line = lexLine('VERSION:2.0')
   expect(line.name).toBe('VERSION')
-  expect(line.params).toStrictEqual([])
+  expect(line.params).toStrictEqual({})
   expect(line.values).toStrictEqual(['2.0'])
 })
 
@@ -52,20 +51,20 @@ test('lexing a line with multiple values', () => {
 test('lexing a line with one param', () => {
   const line = lexLine('EXDATE;TZID=Europe/London:20201116T110000')
   expect(line.name).toBe('EXDATE')
-  expect(line.params).toStrictEqual(['TZID=Europe/London'])
+  expect(line.params).toStrictEqual({TZID: 'Europe/London'})
   expect(line.values).toStrictEqual(['20201116T110000'])
 })
 
 test('lexing a line with several param', () => {
   const line = lexLine('ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Ewan Milne;X-NUM-GUESTS=0:mailto:ewan.milne@kaluza.com')
   expect(line.name).toBe('ATTENDEE')
-  expect(line.params).toStrictEqual([
-    'CUTYPE=INDIVIDUAL',
-    'ROLE=REQ-PARTICIPANT',
-    'PARTSTAT=ACCEPTED',
-    'CN=Ewan Milne',
-    'X-NUM-GUESTS=0',
-  ])
+  expect(line.params).toStrictEqual({
+    'CUTYPE': 'INDIVIDUAL',
+    'ROLE': 'REQ-PARTICIPANT',
+    'PARTSTAT': 'ACCEPTED',
+    'CN': 'Ewan Milne',
+    'X-NUM-GUESTS': '0',
+  })
   expect(line.values).toStrictEqual(['mailto:ewan.milne@kaluza.com'])
 })
 
@@ -78,6 +77,6 @@ test('lexing a line with special in value', () => {
   expect(line.values).toStrictEqual(['one,two;three\nfour'])
 })
 test('lexing a line with special in param', () => {
-  const line = lexLine('key;one\\,two\\;three\\nfour:val')
-  expect(line.params).toStrictEqual(['one,two;three\nfour'])
+  const line = lexLine('key;one\\,two\\;three\\nfour=0:val')
+  expect(line.params).toStrictEqual({'one,two;three\nfour': '0'})
 })
