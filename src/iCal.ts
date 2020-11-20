@@ -67,10 +67,11 @@ function readRawEvent(rawEvent: ICalObject) {
       let nextCandidate = instance
       let loops = 0
       do {
+        if (nextCandidate.start > intervalFor.end) break;
+        
         const nextCandidates = rrule.func(nextCandidate)
         nextCandidate = nextCandidates[nextCandidates.length-1]
 
-        if (nextCandidate.start > intervalFor.end) break;
 
         nextCandidates.forEach(candidate => {
 

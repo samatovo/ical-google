@@ -86,6 +86,7 @@ test('getting simple events in duration - every week, on MON, WED and FRI', () =
   const oneWeek = ical.getEventsDuringInterval(monday1, monday2)
   expect(oneWeek).toStartAt('2020-11-16', '2020-11-18', '2020-11-20')
   
+  
   // const twoWeeks = ical.getEventsDuringInterval(monday1, monday3)
   // expect(twoWeeks).toStartAt('2020-11-16T00:00:00Z')
 
