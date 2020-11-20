@@ -35,24 +35,19 @@ test('lexing a line with no params', () => {
   const line = lexLine('VERSION:2.0')
   expect(line.name).toBe('VERSION')
   expect(line.params).toStrictEqual({})
-  expect(line.values).toStrictEqual(['2.0'])
+  expect(line.value).toStrictEqual('2.0')
 })
 
 test('lexing a line with : in value', () => {
   const line = lexLine('VERSION:2.0:3.0')
-  expect(line.values).toStrictEqual(['2.0:3.0'])
-})
-
-test('lexing a line with multiple values', () => {
-  const line = lexLine('VERSION:2.0,3.0')
-  expect(line.values).toStrictEqual(['2.0', '3.0'])
+  expect(line.value).toStrictEqual('2.0:3.0')
 })
 
 test('lexing a line with one param', () => {
   const line = lexLine('EXDATE;TZID=Europe/London:20201116T110000')
   expect(line.name).toBe('EXDATE')
   expect(line.params).toStrictEqual({TZID: 'Europe/London'})
-  expect(line.values).toStrictEqual(['20201116T110000'])
+  expect(line.value).toStrictEqual('20201116T110000')
 })
 
 test('lexing a line with several param', () => {
@@ -65,7 +60,7 @@ test('lexing a line with several param', () => {
     'CN': 'Ewan Milne',
     'X-NUM-GUESTS': '0',
   })
-  expect(line.values).toStrictEqual(['mailto:ewan.milne@kaluza.com'])
+  expect(line.value).toStrictEqual('mailto:ewan.milne@kaluza.com')
 })
 
 test('lexing a line with special in name', () => {
@@ -74,7 +69,7 @@ test('lexing a line with special in name', () => {
 })
 test('lexing a line with special in value', () => {
   const line = lexLine('key:one\\,two\\;three\\nfour')
-  expect(line.values).toStrictEqual(['one,two;three\nfour'])
+  expect(line.value).toStrictEqual('one,two;three\nfour')
 })
 test('lexing a line with special in param', () => {
   const line = lexLine('key;one\\,two\\;three\\nfour=0:val')

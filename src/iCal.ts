@@ -1,11 +1,17 @@
 import { formatISO, isEqual } from "date-fns"
 import add from "date-fns/add"
+import getISODay from "date-fns/getISODay"
 import areIntervalsOverlapping from "date-fns/areIntervalsOverlapping"
 import intervalToDuration from "date-fns/intervalToDuration"
 import parse from "date-fns/parse"
 import sub from "date-fns/sub"
 import { IcsLine } from "./lexer"
 import { ICalObject, parseIcs } from "./parser"
+
+interface Interval {
+  days?: number,
+  weeks?: number
+}
 
 function flatten<T>(arr: T[][]): T[] {
   return arr.reduce((acc, c) => [...acc, ...c])
@@ -39,7 +45,7 @@ function readRawEvent(rawEvent: ICalObject) {
   const end = readMandatoryRawDate(rawEvent.props.DTEND, 'DTEND')
   const interval = {start, end}
   const duration = intervalToDuration(interval)
-  const rrule = readRRule(rawEvent.props.RRULE)
+  const rrule = readRRule(rawEvent.props.RRULE, start)
   const exdates = readRawDates(rawEvent.props.EXDATE).map(x => formatISO(x))
 
   const summary = rawEvent.props.SUMMARY.value
@@ -61,13 +67,17 @@ function readRawEvent(rawEvent: ICalObject) {
       let nextCandidate = instance
       let loops = 0
       do {
-        nextCandidate = rrule.func(nextCandidate)
+        const nextCandidates = rrule.func(nextCandidate)
+        nextCandidate = nextCandidates[nextCandidates.length-1]
 
         if (nextCandidate.start > intervalFor.end) break;
 
-        if (!exdates.includes(formatISO(nextCandidate.start))) {
-          candidates.push(nextCandidate)
-        }
+        nextCandidates.forEach(candidate => {
+
+          if (!exdates.includes(formatISO(candidate.start))) {
+            candidates.push(candidate)
+          }
+        })
         if (candidates.length >= rrule.count) break
         if (nextCandidate.start >= rrule.until) break
         if (loops++ > 100) throw new Error("Too many loops");
@@ -91,7 +101,7 @@ function readRawEvent(rawEvent: ICalObject) {
   }  
 }
 
-export function readRRule(rrule: IcsLine) {
+export function readRRule(rrule: IcsLine, start: Date) {
   if (!rrule) return null
   const parts: {[key: string]: string} = rrule.value.split(';').reduce((acc, c) => {
     const [k, v] = c.split('=')
@@ -100,30 +110,49 @@ export function readRRule(rrule: IcsLine) {
 
   if (!parts.FREQ) throw new Error("RRULE is missing FREQ");
   const freq = parts.FREQ; delete parts.FREQ
+  const byDay = parts.BYDAY; delete parts.BYDAY
   const interval = parseInt(parts.INTERVAL || '1'); delete parts.INTERVAL
   const count = parseInt(parts.COUNT || `${Number.MAX_SAFE_INTEGER}` ); delete parts.COUNT
   const until = parseIcsDate(parts.UNTIL || '99990101'); delete parts.UNTIL
 
-  let func: (prev: EventInstance) => EventInstance
+  const dayOfWeek = getISODay(start)
+
+
+  let func: (prev: EventInstance) => EventInstance[]
+
+  const makeFunc = (repeatIntervals: Interval[]) => (prev:EventInstance): EventInstance[] => {
+    return repeatIntervals.map(repeatInterval =>({
+      ...prev,
+      start: add(prev.start, repeatInterval),
+      end: add(prev.end, repeatInterval)
+    }))
+  }
 
   if (freq === 'DAILY') {
-    func = (prev:EventInstance): EventInstance => {
-      return {
-        ...prev,
-        start: add(prev.start, {days: interval}),
-        end: add(prev.end, {days: interval})
-      }
-
-    }
+    func = makeFunc([{days: interval}])
+  } else if (freq === 'WEEKLY' && byDay) {
+    //console.log({byDay})
+    const matchingDays = daysOfWeek.map((dow, i) => ({
+      i: i+1,
+      dow, 
+      in: byDay.includes(dow)
+    }))
+    //console.log(matchingDays)
+    //console.log('dayOfWeek:', dayOfWeek);
+    const chopIndex = matchingDays.findIndex(x => x.i === dayOfWeek) + 1
+    //console.log('chopIndex:', chopIndex);
+    const offsetList = [...matchingDays.slice(chopIndex, 7), ...matchingDays.slice(0, chopIndex)]
+    //console.log('offsetList:', offsetList);
+    
+    const offsets = offsetList
+      .map((o, i) => ({t:o.in, n:i+1}))
+      .filter(({t})=>t)
+      .map(({n})=>n)
+    //console.log('offsets:', offsets);
+    
+    func = makeFunc(offsets.map(offBy => ({days: offBy})))
   } else if (freq === 'WEEKLY') {
-    func = (prev:EventInstance): EventInstance => {
-      return {
-        ...prev,
-        start: add(prev.start, {weeks: interval}),
-        end: add(prev.end, {weeks: interval})
-      }
-
-    }
+    func = makeFunc([{weeks: interval}])
   } else throw new Error("Unsupported FREQ:" + freq);
   
   const unusedKeys = Object.keys(parts)
@@ -143,6 +172,16 @@ function parseIcsDate(str: string) {
     return parse(str, 'yyyyMMdd', new Date())
   }
 }
+
+const daysOfWeek = [
+  'MO',
+  'TU',
+  'WE',
+  'TH',
+  'FR',
+  'SA',
+  'SU',
+]
 
 export function readMandatoryRawDate(rawEvents: IcsLine, name: string) {
   if (!rawEvents) throw new Error('Missing mandatory var:'+name) 

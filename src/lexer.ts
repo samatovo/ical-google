@@ -31,7 +31,6 @@ export type IcsLine = {
   line: string
   name: string
   params: {[key: string]: string}
-  values: string[]
   value: string
   next?: IcsLine
 }
@@ -40,18 +39,16 @@ export function lexLine(icsLine: string): IcsLine {
   const icsLineSafe = safe(icsLine)
 
   const [nameParams, ...valuesParts] = icsLineSafe.split(':')
-  const value = valuesParts.join(':')
-  const values = cleanList(value.split(','))
+  const value = clean(valuesParts.join(':'))
   const [name, ...paramsList] = nameParams.split(';')
   const cleanParams = cleanList(paramsList)
   const params = cleanParams
     .map(str => str.split('='))
     .reduce((acc, [k, v]) =>({...acc, [k]: v}), {})
   return {
-    get line() { return name + cleanParams.map(p => `;${p}`).join() + ":" + values.join(',')},
+    get line() { return name + cleanParams.map(p => `;${p}`).join() + ":" + value},
     name: clean(name),
     params,
-    values,
-    get value(){ return  values[0] }
+    value
   }
 }

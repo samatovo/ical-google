@@ -79,12 +79,12 @@ test('getting simple events in duration - every week, skip 2nd', () => {
   expect(twoWeeksAndADay).toStartAt('2020-11-16T00:00:00Z', '2020-11-30T00:00:00Z')
 })
 
-test.skip('getting simple events in duration - every week, on MON, WED and FRI', () => {
+test('getting simple events in duration - every week, on MON, WED and FRI', () => {
   const eveyDayForever = eveyWeekForever.replace('RRULE:FREQ=WEEKLY', 'RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR')
   const ical = loadICal(eveyDayForever)
   
   const oneWeek = ical.getEventsDuringInterval(monday1, monday2)
-  expect(oneWeek).toStartAt('2020-11-16', '2020-11-16', '2020-11-16')
+  expect(oneWeek).toStartAt('2020-11-16', '2020-11-18', '2020-11-20')
   
   // const twoWeeks = ical.getEventsDuringInterval(monday1, monday3)
   // expect(twoWeeks).toStartAt('2020-11-16T00:00:00Z')

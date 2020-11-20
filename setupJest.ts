@@ -59,12 +59,14 @@ const toBeIcsInstances = (received: EventInstance[], expected: string[]): Custom
 }
 
 const toStartAt = (received: EventInstance[], ...expected: string[]): CustomMatcherResult => {
-  const expectedDate = expected.map(x => parseISO(x)).sort()
-  const receivedDate = received.map(x => x.start).sort()
+  const expectedDate = expected.map(x => parseISO(x)).sort(sortDates)
+  const receivedDate = received.map(x => x.start).sort(sortDates)
   const expectedDateStrings = expectedDate.map(x=>formatISO(x)).join()
   const receivedDateStrings = receivedDate.map(x=>formatISO(x)).join()
   return makeResult('toStartAt', expectedDateStrings, receivedDateStrings, expectedDateStrings === receivedDateStrings)
 }
+
+const sortDates = (a: Date, b: Date) => a.getDate() - b.getDate()
 
 expect.extend({
   toBeDate,

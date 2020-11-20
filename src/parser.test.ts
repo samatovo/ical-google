@@ -16,10 +16,7 @@ test('parse VCALENDAR with one key', () => {
           "line": "KEY:ONE",
           "name": "KEY",
           "params": {},
-          "value": "ONE",
-          "values": [
-            "ONE",
-          ],
+          "value": "ONE"
         }
       }
     })
