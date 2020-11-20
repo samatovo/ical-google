@@ -40,7 +40,13 @@ function readBlock(blockName: string, lines: IcsLine[]): ReadBlockType {
       icalObject.blocks[current.value].push(innerIcalObject)
       rest = innerRest
     } else {
-      icalObject.props[current.name] = current
+      if (!icalObject.props[current.name]) {
+        icalObject.props[current.name] = current
+      } else {
+        let start = icalObject.props[current.name]
+        while(start.next) start = start.next
+        start.next = current
+      }
       rest = more
     }
   } while(true)

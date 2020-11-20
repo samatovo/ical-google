@@ -1,3 +1,4 @@
+import { formatISO, isEqual } from "date-fns"
 import add from "date-fns/add"
 import areIntervalsOverlapping from "date-fns/areIntervalsOverlapping"
 import intervalToDuration from "date-fns/intervalToDuration"
@@ -34,11 +35,12 @@ export interface EventInstance {
 }
 
 function readRawEvent(rawEvent: ICalObject) {
-  const start = readRawDate(rawEvent.props.DTSTART)
-  const end = readRawDate(rawEvent.props.DTEND)
+  const start = readMandatoryRawDate(rawEvent.props.DTSTART, 'DTSTART')
+  const end = readMandatoryRawDate(rawEvent.props.DTEND, 'DTEND')
   const interval = {start, end}
   const duration = intervalToDuration(interval)
   const rrule = readRRule(rawEvent.props.RRULE)
+  const exdates = readRawDates(rawEvent.props.EXDATE).map(x => formatISO(x))
 
   const summary = rawEvent.props.SUMMARY.value
   const description = rawEvent.props.DESCRIPTION.value
@@ -59,25 +61,24 @@ function readRawEvent(rawEvent: ICalObject) {
       let nextCandidate = instance
       let loops = 0
       do {
-        nextCandidate = rrule(nextCandidate)
+        nextCandidate = rrule.func(nextCandidate)
 
         if (nextCandidate.start > intervalFor.end) break;
 
-        candidates.push(nextCandidate)
+        if (!exdates.includes(formatISO(nextCandidate.start))) {
+          candidates.push(nextCandidate)
+        }
+        if (candidates.length >= rrule.count) break
+        if (nextCandidate.start >= rrule.until) break
         if (loops++ > 100) throw new Error("Too many loops");
       } while(nextCandidate !== null)
-      console.log('loops:', loops)
+      // console.log('loops:', loops)
     }
     
     return candidates.filter(candidate => {
       const interval = {start: candidate.start, end: candidate.end}
       return areIntervalsOverlapping(interval, intervalFor)
     })
-    // if(areIntervalsOverlapping(interval, intervalFor)) {
-    //   return [instance]
-    // } else {
-    //   return []
-    // }
   }
 
   return {
@@ -99,13 +100,18 @@ export function readRRule(rrule: IcsLine) {
 
   if (!parts.FREQ) throw new Error("RRULE is missing FREQ");
   const freq = parts.FREQ; delete parts.FREQ
+  const interval = parseInt(parts.INTERVAL || '1'); delete parts.INTERVAL
+  const count = parseInt(parts.COUNT || `${Number.MAX_SAFE_INTEGER}` ); delete parts.COUNT
+  const until = parseIcsDate(parts.UNTIL || '99990101'); delete parts.UNTIL
+
+  let func: (prev: EventInstance) => EventInstance
 
   if (freq === 'DAILY') {
-    return (prev:EventInstance): EventInstance => {
+    func = (prev:EventInstance): EventInstance => {
       return {
         ...prev,
-        start: add(prev.start, {days: 1}),
-        end: add(prev.end, {days: 1})
+        start: add(prev.start, {days: interval}),
+        end: add(prev.end, {days: interval})
       }
 
     }
@@ -113,16 +119,48 @@ export function readRRule(rrule: IcsLine) {
   
   const unusedKeys = Object.keys(parts)
   if (unusedKeys.length > 0) throw new Error("rrule parameters not supported:"+unusedKeys);
+
+  return {
+    func,
+    count,
+    until
+  }
 }
 
-export function readRawDate(rawEvent: IcsLine) {
-  const value = rawEvent.params.VALUE;
+function parseIcsDate(str: string) {
+  if (str.includes('T')) {
+    return parse(str, "yyyyMMdd'T'HHmmssX", new Date())
+  } else {
+    return parse(str, 'yyyyMMdd', new Date())
+  }
+}
+
+export function readMandatoryRawDate(rawEvents: IcsLine, name: string) {
+  if (!rawEvents) throw new Error('Missing mandatory var:'+name) 
+  return readRawDate(rawEvents)
+}
+
+export function readRawDates(firstLine: IcsLine) {
+  return allLines(firstLine).map(readRawDate)
+}
+
+export function readRawDate(line: IcsLine) {
+  const value = line.params.VALUE;
 
   if (value === undefined) {               
-    return parse(rawEvent.value, "yyyyMMdd'T'HHmmssX", new Date())
+    return parse(line.value, "yyyyMMdd'T'HHmmssX", new Date())
   } else if (value === 'DATE') {
-    return parse(rawEvent.value, 'yyyyMMdd', new Date())
+    return parse(line.value, 'yyyyMMdd', new Date())
   } else throw 'Unsupported date VALUE:'+value
+}
 
+function allLines(line: IcsLine): IcsLine[] {
+  const lines: IcsLine[] = []
+  let currentLine: IcsLine | undefined  = line
+  while(currentLine) {
+    lines.push(currentLine)
+    currentLine = currentLine.next
+  }
+  return lines
 }
 

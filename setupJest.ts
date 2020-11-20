@@ -1,21 +1,27 @@
 
 import chalk from 'chalk';
-import formatISO from "date-fns/formatISO";
+import formatISOReal from "date-fns/formatISO";
 import isEqual from "date-fns/isEqual";
 import parseISO from "date-fns/parseISO";
 import type { EventInstance } from './src/iCal';
 
-
 export {};
-
-
 
 declare global {
   namespace jest {
     interface Matchers<R> {
       toBeDate(expected: string): CustomMatcherResult
+      toBeDates(expected: string[]): CustomMatcherResult
       toBeIcsInstances(expected: string[]): CustomMatcherResult
     }
+  }
+}
+
+const formatISO = (date: Date) => {
+  try {
+    return formatISOReal(date)
+  } catch (e) {
+    return e.toString()
   }
 }
 
@@ -37,6 +43,14 @@ const toBeDate = (received: Date, expected: string): CustomMatcherResult => {
   return makeResult('toBeDate', expected, formatISO(received), isEqual(received, expectedDate))
 }
 
+const toBeDates = (received: Date[], expected: string[]): CustomMatcherResult => {
+  const expectedDate = expected.map(x => parseISO(x)).sort()
+  const receivedDate = [...received].sort()
+  const expectedDateStrings = expectedDate.map(x=>formatISO(x)).join()
+  const receivedDateStrings = receivedDate.map(x=>formatISO(x)).join()
+  return makeResult('toBeDates', expectedDateStrings, receivedDateStrings, receivedDateStrings === expectedDateStrings)
+}
+
 const toBeIcsInstances = (received: EventInstance[], expected: string[]): CustomMatcherResult => {
   const receivedStr = received.map(r => JSON.stringify(r.summary)).sort().join(', ')
   const expectedStr = expected.map(s => JSON.stringify(s)).sort().join(', ')
@@ -45,5 +59,6 @@ const toBeIcsInstances = (received: EventInstance[], expected: string[]): Custom
 
 expect.extend({
   toBeDate,
+  toBeDates,
   toBeIcsInstances
 });

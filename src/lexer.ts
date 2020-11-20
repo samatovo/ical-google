@@ -33,6 +33,7 @@ export type IcsLine = {
   params: {[key: string]: string}
   values: string[]
   value: string
+  next?: IcsLine
 }
 
 export function lexLine(icsLine: string): IcsLine {
