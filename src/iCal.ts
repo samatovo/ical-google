@@ -115,6 +115,15 @@ export function readRRule(rrule: IcsLine) {
       }
 
     }
+  } else if (freq === 'WEEKLY') {
+    func = (prev:EventInstance): EventInstance => {
+      return {
+        ...prev,
+        start: add(prev.start, {weeks: interval}),
+        end: add(prev.end, {weeks: interval})
+      }
+
+    }
   } else throw new Error("Unsupported FREQ:" + freq);
   
   const unusedKeys = Object.keys(parts)

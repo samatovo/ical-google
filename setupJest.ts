@@ -13,6 +13,7 @@ declare global {
       toBeDate(expected: string): CustomMatcherResult
       toBeDates(expected: string[]): CustomMatcherResult
       toBeIcsInstances(expected: string[]): CustomMatcherResult
+      toStartAt(...expected: string[]): CustomMatcherResult
     }
   }
 }
@@ -57,8 +58,17 @@ const toBeIcsInstances = (received: EventInstance[], expected: string[]): Custom
   return makeResult('toBeIcsInstances', expectedStr, receivedStr, receivedStr === expectedStr)
 }
 
+const toStartAt = (received: EventInstance[], ...expected: string[]): CustomMatcherResult => {
+  const expectedDate = expected.map(x => parseISO(x)).sort()
+  const receivedDate = received.map(x => x.start).sort()
+  const expectedDateStrings = expectedDate.map(x=>formatISO(x)).join()
+  const receivedDateStrings = receivedDate.map(x=>formatISO(x)).join()
+  return makeResult('toStartAt', expectedDateStrings, receivedDateStrings, expectedDateStrings === receivedDateStrings)
+}
+
 expect.extend({
   toBeDate,
   toBeDates,
-  toBeIcsInstances
+  toBeIcsInstances,
+  toStartAt
 });
