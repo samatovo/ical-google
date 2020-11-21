@@ -1,9 +1,10 @@
 
 import chalk from 'chalk';
+import diff, {diffStringsUnified} from 'jest-diff';
 import formatISOReal from "date-fns/formatISO";
 import isEqual from "date-fns/isEqual";
 import parseISO from "date-fns/parseISO";
-import type { EventInstance } from './src/iCal';
+import type { EventInstance } from './iCal';
 
 export {};
 
@@ -31,17 +32,18 @@ interface CustomMatcherResult {
   message: () => string
 }
 
-const makeResult = (name: string, expected: string, received:string, pass: boolean) => ({
-  pass,
-  message: () => `expect(${chalk.green('expected')})${pass?'.not':''}.${name}(${chalk.red('received')})\n`+
-  `\nExpected: ${chalk.green(expected)}`+
-  `\nReceived: ${chalk.red(received)}`
+const makeResult = <T>(name: string, expected: string, received:string) => ({
+  pass: expected === received,
+  message: () => `expect(${chalk.green('expected')})${expected === received?'.not':''}.${name}(${chalk.red('received')})\n`+
+  //`\nExpected: ${chalk.green(expected)}`+
+  //`\nReceived: ${chalk.red(received)}`+
+  `\n${diffStringsUnified(expected, received, {omitAnnotationLines: true})}`
 })
 
 
 const toBeDate = (received: Date, expected: string): CustomMatcherResult => {
   const expectedDate = parseISO(expected)
-  return makeResult('toBeDate', expected, formatISO(received), isEqual(received, expectedDate))
+  return makeResult('toBeDate', expected, formatISO(received))
 }
 
 const toBeDates = (received: Date[], expected: string[]): CustomMatcherResult => {
@@ -49,13 +51,13 @@ const toBeDates = (received: Date[], expected: string[]): CustomMatcherResult =>
   const receivedDate = [...received].sort()
   const expectedDateStrings = expectedDate.map(x=>formatISO(x)).join()
   const receivedDateStrings = receivedDate.map(x=>formatISO(x)).join()
-  return makeResult('toBeDates', expectedDateStrings, receivedDateStrings, receivedDateStrings === expectedDateStrings)
+  return makeResult('toBeDates', expectedDateStrings, receivedDateStrings)
 }
 
 const toBeIcsInstances = (received: EventInstance[], expected: string[]): CustomMatcherResult => {
-  const receivedStr = received.map(r => JSON.stringify(r.summary)).sort().join(', ')
-  const expectedStr = expected.map(s => JSON.stringify(s)).sort().join(', ')
-  return makeResult('toBeIcsInstances', expectedStr, receivedStr, receivedStr === expectedStr)
+  const receivedStr = [...received].sort(sortStartDates).map(r => JSON.stringify(r.summary)).join(', ')
+  const expectedStr = expected.map(s => JSON.stringify(s)).join(', ')
+  return makeResult('toBeIcsInstances', expectedStr, receivedStr)
 }
 
 const toStartAt = (received: EventInstance[], ...expected: string[]): CustomMatcherResult => {
@@ -63,10 +65,11 @@ const toStartAt = (received: EventInstance[], ...expected: string[]): CustomMatc
   const receivedDate = received.map(x => x.start).sort(sortDates)
   const expectedDateStrings = expectedDate.map(x=>formatISO(x)).join()
   const receivedDateStrings = receivedDate.map(x=>formatISO(x)).join()
-  return makeResult('toStartAt', expectedDateStrings, receivedDateStrings, expectedDateStrings === receivedDateStrings)
+  return makeResult('toStartAt', expectedDateStrings, receivedDateStrings)
 }
 
-const sortDates = (a: Date, b: Date) => a.getDate() - b.getDate()
+const sortDates = (a: Date, b: Date) => a.getTime() - b.getTime()
+const sortStartDates = (a: EventInstance, b: EventInstance) => a.start.getTime() - b.start.getTime()
 
 expect.extend({
   toBeDate,

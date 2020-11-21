@@ -10,6 +10,6 @@ module.exports = {
         "^.+\\.(ts|tsx)$": "ts-jest"
     },
     "setupFilesAfterEnv": [
-        "./setupJest.ts"
+        "./src/setupJest.ts"
     ]
 }
