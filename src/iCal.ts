@@ -44,7 +44,12 @@ interface VEvent {
   getEventsDuringInterval: (start: Date, end: Date) => EventInstance[]
 }
 
-export function loadICal(icsText: string) {
+export interface ICal {
+  events: VEvent[]
+  getEventsDuringInterval: (start: Date, end: Date) => EventInstance[]
+}
+
+export function loadICal(icsText: string): ICal {
   const parsed = parseIcs(icsText)
   const rawEvents = parsed.blocks.VEVENT || []
   const events = rawEvents.map(readRawEvent)
@@ -62,7 +67,8 @@ export function loadICal(icsText: string) {
   // console.log('groupedEvents:', groupedEvents)
 
   const getEventsDuringInterval = (start: Date, end: Date) => {
-    return flatten(events.map(e => e.getEventsDuringInterval(start, end)))
+    const edi = flatten(events.map(e => e.getEventsDuringInterval(start, end)))
+    return edi.sort((a: EventInstance, b: EventInstance) => a.start.getTime() - b.start.getTime())
   }
 
   return {
