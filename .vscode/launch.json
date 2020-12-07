@@ -16,6 +16,16 @@
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "port": 9229
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug - run.ts",
+      "program": "${workspaceFolder}/dist/run.js",
+      "preLaunchTask": "tsc: build - tsconfig.json",
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ]
     }
   ]
 }

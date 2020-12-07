@@ -223,16 +223,16 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
     })
     func = makeFunc([{days: 1}])
 
-    skipIf = prev => getDayOfYear(prev.start) === getDayOfYear(endOfWeek(prev.start))
-    skipperFunc = prev => {
-      const sowDate = getDate(startOfWeek(prev.start))
-      const start = add(setDate(prev.start, sowDate),  {weeks: interval})
-      return {
-        ...prev, 
-        start: start,
-        end: add(start, eventLength)
-      }
-    }
+    // skipIf = prev => getDayOfYear(prev.start) === getDayOfYear(endOfWeek(prev.start))
+    // skipperFunc = prev => {
+    //   const sowDate = getDate(startOfWeek(prev.start))
+    //   const start = add(setDate(prev.start, sowDate),  {weeks: interval})
+    //   return {
+    //     ...prev, 
+    //     start: start,
+    //     end: add(start, eventLength)
+    //   }
+    // }
   } else if (freq === 'WEEKLY') {
     func = makeFunc([{weeks: interval}])
   } else if (freq === 'MONTHLY' && byMonthDay) {
@@ -263,6 +263,7 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
   if (unusedKeys.length > 0) throw new Error("rrule parameters not supported:"+unusedKeys);
 
   return {
+    rrule: rrule.value,
     func,
     skipIf,
     skipperFunc,
