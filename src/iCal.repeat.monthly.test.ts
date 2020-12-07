@@ -112,3 +112,68 @@ test('repeat monthly - alternat months on 16th, 20th and 5th', () => {
   const threeMonths = ical.getEventsDuringInterval(november, february)
   expect(threeMonths).toStartAt('2020-11-16', '2020-11-20', '2021-01-16','2021-01-05','2021-01-20')
 })
+
+test('repeat monthly - on the third monday of the month', () => {
+  const ical = loadICal(eveyMonthForever
+    .replace('RRULE:FREQ=MONTHLY', 'RRULE:FREQ=MONTHLY;BYDAY=3MO')
+    .replace('SUMMARY:', 'SUMMARY:3MO-')
+    )
+  
+  const oneMonth = ical.getEventsDuringInterval(november, december)
+  expect(oneMonth).toStartAt('2020-11-16')
+  
+  const twoMonths = ical.getEventsDuringInterval(november, january)
+  expect(twoMonths).toStartAt('2020-11-16', '2020-12-21')
+  
+  const threeMonths = ical.getEventsDuringInterval(november, february)
+  expect(threeMonths).toStartAt('2020-11-16', '2020-12-21', '2021-01-18')
+})
+
+test('repeat monthly - on the third monday, wednesday and friday of the month', () => {
+  const ical = loadICal(eveyMonthForever
+    .replace('RRULE:FREQ=MONTHLY', 'RRULE:FREQ=MONTHLY;BYDAY=3MO,3WE,3FR')
+    .replace('SUMMARY:', 'SUMMARY:3MO-3WE-3FR-')
+    )
+  
+  const oneMonth = ical.getEventsDuringInterval(november, december)
+  expect(oneMonth).toStartAt('2020-11-16', '2020-11-18', '2020-11-20')
+  
+  const twoMonths = ical.getEventsDuringInterval(november, january)
+  expect(twoMonths).toStartAt('2020-11-16', '2020-11-18', '2020-11-20', '2020-12-16', '2020-12-18', '2020-12-21')
+})
+
+test('repeat monthly - on the third tuesday of the month', () => {
+  const ical = loadICal(eveyMonthForever
+    .replace('DTSTART;VALUE=DATE:20201116', 'DTSTART;VALUE=DATE:20201117')
+    .replace('DTEND;VALUE=DATE:20201117', 'DTEND;VALUE=DATE:20201118')
+    .replace('RRULE:FREQ=MONTHLY', 'RRULE:FREQ=MONTHLY;BYDAY=3TU')
+    .replace('SUMMARY:', 'SUMMARY:3TU-')
+    )
+  
+  const oneMonth = ical.getEventsDuringInterval(november, december)
+  expect(oneMonth).toStartAt('2020-11-17')
+  
+  const twoMonths = ical.getEventsDuringInterval(november, january)
+  expect(twoMonths).toStartAt('2020-11-17', '2020-12-15') // Jan starts with a tuesday so 15th not 22nd
+  
+  const threeMonths = ical.getEventsDuringInterval(november, february)
+  expect(threeMonths).toStartAt('2020-11-17', '2020-12-15', '2021-01-19')
+})
+
+test('repeat monthly - on the third wednesday of the month', () => {
+  const ical = loadICal(eveyMonthForever
+    .replace('DTSTART;VALUE=DATE:20201116', 'DTSTART;VALUE=DATE:20201118')
+    .replace('DTEND;VALUE=DATE:20201117', 'DTEND;VALUE=DATE:20201119')
+    .replace('RRULE:FREQ=MONTHLY', 'RRULE:FREQ=MONTHLY;BYDAY=3WE')
+    .replace('SUMMARY:', 'SUMMARY:3WE-')
+    )
+  
+  const oneMonth = ical.getEventsDuringInterval(november, december)
+  expect(oneMonth).toStartAt('2020-11-18')
+  
+  const twoMonths = ical.getEventsDuringInterval(november, january)
+  expect(twoMonths).toStartAt('2020-11-18', '2020-12-16') 
+  
+  const threeMonths = ical.getEventsDuringInterval(november, february)
+  expect(threeMonths).toStartAt('2020-11-18', '2020-12-16', '2021-01-20')
+})

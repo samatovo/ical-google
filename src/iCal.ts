@@ -1,4 +1,4 @@
-import { endOfWeek, formatISO, getDate, isEqual, setDate, startOfWeek } from "date-fns"
+import { formatISO, getDate, isEqual, setDate, getWeekOfMonth } from "date-fns"
 import add from "date-fns/add"
 import getISODay from "date-fns/getISODay"
 import startOfMonth  from "date-fns/startOfMonth"
@@ -104,6 +104,10 @@ function readRawEvent(rawEvent: ICalObject): VEvent  {
   const getEventsDuringInterval = (start: Date, end: Date) => {
     if (rid) return[]
 
+    if (summary.includes('SLO Review')) {
+      console.log('summary:', summary);
+    }
+
     const intervalFor = {start, end: sub(end, {seconds:1})}
     
     const instance = toInstance()
@@ -117,6 +121,10 @@ function readRawEvent(rawEvent: ICalObject): VEvent  {
         
         const nextCandidates = rrule.func(nextCandidate)
         nextCandidate = nextCandidates[nextCandidates.length-1]
+
+        // if (nextCandidate.start.getDate() === 13 && nextCandidate.summary === '3MO-Monthly') {
+        //   console.log('Stop')
+        // }
 
 
         nextCandidates.forEach(candidate => {
@@ -255,6 +263,34 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
       }
     }
     //func = makeFunc(dates.map(offBy => ({days: offBy})))
+  } else if (freq === 'MONTHLY' && byDay) {
+    const validDays = byDay.split(',').map(x=>readDayOfMonth(x))
+    filters.push(date => {
+
+      const dow = getISODay(date)
+      return validDays.some(validDay => {
+        const weekStartsOn = (validDay.dow + 1)%7 as 0 | 1 | 2 | 3 | 4 | 5 | 6
+        const week = getWeekOfMonth(date, {weekStartsOn: weekStartsOn})
+        return week === validDay.week && dow === validDay.dow
+      })
+    })
+    func = makeFunc([{days: 1}])
+
+    skipIf = prev => getDayOfYear(prev.start) === getDayOfYear(endOfMonth(prev.start))
+    // skipperFunc = prev => ({...prev, 
+    //   start: startOfMonth(add(prev.start, {months: interval})),
+    //   end: startOfMonth(add(prev.end, {months: interval}))
+    // })
+    skipperFunc = prev => {
+      const somDate = getDate(startOfMonth(prev.start))
+      const start = add(setDate(prev.start, somDate),  {months: interval})
+      return {
+        ...prev, 
+        start: start,
+        end: add(start, eventLength)
+      }
+    }
+    //func = makeFunc(dates.map(offBy => ({days: offBy})))
   } else if (freq === 'MONTHLY') {
     func = makeFunc([{months: interval}])
   } else throw new Error("Unsupported FREQ:" + freq);
@@ -271,6 +307,16 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
     count,
     until
   }
+}
+
+function readDayOfMonth(str: string) {
+  const match = /^(\d)(MO|TU|WE|TH|FR|SA|SU)$/.exec(str)
+  if (match === null) {
+    throw new Error('Not sure what to do with Day of month: ' + str)
+  }
+  const week = parseInt(match[1])
+  const dow = 1 + daysOfWeek.indexOf(match[2])
+  return {week, dow}
 }
 
 function parseIcsDate(str: string) {
