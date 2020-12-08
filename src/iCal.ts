@@ -55,8 +55,8 @@ export function loadICal(icsText: string): ICal {
   const events = rawEvents.map(readRawEvent)
 
   const groupedEvents = Object.values(groupBy(events, e => e.uid)).map(arr=> {
-    const master = arr.find(e => !e.rid)
-    if (!master) throw new Error('No master event')
+    const master = arr.length === 1 ? arr[0] : arr.find(e => !e.rid)
+    if (!master) throw new Error('No master event for event '+arr[0].toInstance().summary)
     const movedRecurrences = arr.filter(e => e.rid && !isEqual(e.rid, e.start))
     const detailRecurrences = arr.filter(e => e.rid && isEqual(e.rid, e.start))
     
