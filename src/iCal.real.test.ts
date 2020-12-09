@@ -1,40 +1,43 @@
 test.todo('Find way to have real data')
 
-// import { formatISO } from 'date-fns'
-// import add from 'date-fns/add'
-// import parseISO from 'date-fns/parseISO'
-// import startOfDay from 'date-fns/startOfDay'
-// import {readFileSync} from 'fs'
-// import {loadICal} from './iCal'
+import { endOfDay, formatISO } from 'date-fns'
+import add from 'date-fns/add'
+import parseISO from 'date-fns/parseISO'
+import startOfDay from 'date-fns/startOfDay'
+import {readFileSync} from 'fs'
+import {loadICal} from './iCal'
 
 
 
-// const real = readFileSync('./src/examples/basic.ics').toString()
+const real = readFileSync('./src/examples/basic.ics').toString()
 
-// test('sams calendar', () => {
-//   const ical = loadICal(real)
+test('sams calendar', () => {
+  const ical = loadICal(real)
   
-//   const oneWeek = ical
-//     .getEventsDuringInterval(parseISO('2020-11-16'), parseISO('2020-11-20'))
-//     .sort((a,b) => a.start.getTime() - b.start.getTime())
+  const interval = {start: startOfDay(new Date()), end: endOfDay(new Date())}
+  // const interval = {start: parseISO('2020-12-07'), end: parseISO('2020-12-08')}
 
-//   console.log(groupBy(oneWeek, x => formatISO( startOfDay(x.start))))
+  const oneWeek = ical
+    .getEventsDuringInterval(interval)
+    .sort((a,b) => a.start.getTime() - b.start.getTime())
+
+  console.log(groupBy(oneWeek, x => formatISO( startOfDay(x.start))))
   
-// })
+})
 
-// function groupBy<T>(arr: T[], keyFunc: (x:T) => string): {[key: string]: T[]} {
+function groupBy<T>(arr: T[], keyFunc: (x:T) => string): {[key: string]: T[]} {
 
-//   const out: {[key: string]: T[]} = {}
+  const out: {[key: string]: T[]} = {}
 
-//   return arr.reduce((acc, cur) => {
-//     const key = keyFunc(cur)
-//     if (acc[key]) {
-//       return {...acc, [key]: [...acc[key], cur]}
-//     } else {
-//       return {...acc, [key]: [cur]}
-//     }
-//   }, out)
-// }
+  return arr.reduce((acc, cur) => {
+    const key = keyFunc(cur)
+    if (acc[key]) {
+      return {...acc, [key]: [...acc[key], cur]}
+    } else {
+      return {...acc, [key]: [cur]}
+    }
+  }, out)
+}
 
 
 

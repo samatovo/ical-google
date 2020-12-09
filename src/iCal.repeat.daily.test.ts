@@ -13,13 +13,13 @@ test('repeating daily - forever', () => {
   const eveyDayForever = readFileSync('./src/examples/every-day-forever.ics').toString()
   const ical = loadICal(eveyDayForever)
   
-  const oneDay = ical.getEventsDuringInterval(monday, tueday)
+  const oneDay = ical.getEventsBetwen(monday, tueday)
   expect(oneDay.length).toBe(1)
   
-  const twoDays = ical.getEventsDuringInterval(monday, wednesday)
+  const twoDays = ical.getEventsBetwen(monday, wednesday)
   expect(twoDays.length).toBe(2)
 
-  const fiveDays = ical.getEventsDuringInterval(monday, saturday)
+  const fiveDays = ical.getEventsBetwen(monday, saturday)
   expect(fiveDays.length).toBe(5)
 })
 
@@ -28,14 +28,14 @@ test('repeating daily - every other day', () => {
     .replace('RRULE:FREQ=DAILY', 'RRULE:FREQ=DAILY;INTERVAL=2')
   const ical = loadICal(eveyDayForever)
   
-  const oneDay = ical.getEventsDuringInterval(monday, tueday)
+  const oneDay = ical.getEventsBetwen(monday, tueday)
   expect(oneDay.length).toBe(1)
   expect(oneDay).toBe
   
-  const twoDays = ical.getEventsDuringInterval(monday, wednesday)
+  const twoDays = ical.getEventsBetwen(monday, wednesday)
   expect(twoDays.length).toBe(1)
 
-  const fiveDays = ical.getEventsDuringInterval(monday, saturday)
+  const fiveDays = ical.getEventsBetwen(monday, saturday)
   expect(fiveDays.length).toBe(3)
 })
 
@@ -44,14 +44,14 @@ test('repeating daily - count 2', () => {
     .replace('RRULE:FREQ=DAILY', 'RRULE:FREQ=DAILY;COUNT=2')
   const ical = loadICal(eveyDayForever)
   
-  const oneDay = ical.getEventsDuringInterval(monday, tueday)
+  const oneDay = ical.getEventsBetwen(monday, tueday)
   expect(oneDay.length).toBe(1)
   expect(oneDay).toBe
   
-  const twoDays = ical.getEventsDuringInterval(monday, wednesday)
+  const twoDays = ical.getEventsBetwen(monday, wednesday)
   expect(twoDays.length).toBe(2)
 
-  const fiveDays = ical.getEventsDuringInterval(monday, saturday)
+  const fiveDays = ical.getEventsBetwen(monday, saturday)
   expect(fiveDays.length).toBe(2)
 })
 
@@ -60,14 +60,14 @@ test('repeating daily - until tuesday', () => {
     .replace('RRULE:FREQ=DAILY', 'RRULE:FREQ=DAILY;UNTIL=20201118')
   const ical = loadICal(eveyDayForever)
   
-  const oneDay = ical.getEventsDuringInterval(monday, tueday)
+  const oneDay = ical.getEventsBetwen(monday, tueday)
   expect(oneDay.length).toBe(1)
   expect(oneDay).toBe
   
-  const twoDays = ical.getEventsDuringInterval(monday, wednesday)
+  const twoDays = ical.getEventsBetwen(monday, wednesday)
   expect(twoDays.length).toBe(2)
 
-  const fiveDays = ical.getEventsDuringInterval(monday, saturday)
+  const fiveDays = ical.getEventsBetwen(monday, saturday)
   expect(fiveDays.length).toBe(2)
 })
 test('repeating daily - skip wednesday and friday', () => {
@@ -75,16 +75,16 @@ test('repeating daily - skip wednesday and friday', () => {
     .replace('RRULE:FREQ=DAILY', 'RRULE:FREQ=DAILY\r\nEXDATE;VALUE=DATE:20201118\r\nEXDATE;VALUE=DATE:20201120')
   const ical = loadICal(eveyDayForever)
   
-  const oneDay = ical.getEventsDuringInterval(monday, tueday)
+  const oneDay = ical.getEventsBetwen(monday, tueday)
   expect(oneDay.length).toBe(1)
   expect(oneDay).toBe
   
-  const twoDays = ical.getEventsDuringInterval(monday, wednesday)
+  const twoDays = ical.getEventsBetwen(monday, wednesday)
   expect(twoDays.length).toBe(2)
 
-  const threeDays = ical.getEventsDuringInterval(monday, thursday)
+  const threeDays = ical.getEventsBetwen(monday, thursday)
   expect(threeDays.length).toBe(2)
 
-  const fiveDays = ical.getEventsDuringInterval(monday, saturday)
+  const fiveDays = ical.getEventsBetwen(monday, saturday)
   expect(fiveDays.length).toBe(3)
 })

@@ -41,12 +41,13 @@ interface VEvent {
   detailRecurrences: VEvent[]
   
   toInstance: () => EventInstance
-  getEventsDuringInterval: (start: Date, end: Date) => EventInstance[]
+  getEventsDuringInterval: (interval: {start: Date, end: Date}) => EventInstance[]
 }
 
 export interface ICal {
   events: VEvent[]
-  getEventsDuringInterval: (start: Date, end: Date) => EventInstance[]
+  getEventsDuringInterval: (interval: {start: Date, end: Date}) => EventInstance[]
+  getEventsBetwen: (start: Date, end: Date) => EventInstance[]
 }
 
 export function loadICal(icsText: string): ICal {
@@ -66,14 +67,17 @@ export function loadICal(icsText: string): ICal {
   })
   // console.log('groupedEvents:', groupedEvents)
 
-  const getEventsDuringInterval = (start: Date, end: Date) => {
-    const edi = flatten(events.map(e => e.getEventsDuringInterval(start, end)))
+  const getEventsDuringInterval = (interval: {start: Date, end: Date}) => {
+    const edi = flatten(events.map(e => e.getEventsDuringInterval(interval)))
     return edi.sort((a: EventInstance, b: EventInstance) => a.start.getTime() - b.start.getTime())
   }
 
+  const getEventsBetwen = (start: Date, end: Date) => getEventsDuringInterval({start, end})
+
   return {
     events,
-    getEventsDuringInterval
+    getEventsDuringInterval,
+    getEventsBetwen
   }
 }
 
@@ -101,14 +105,14 @@ function readRawEvent(rawEvent: ICalObject): VEvent  {
     //description
   })
 
-  const getEventsDuringInterval = (start: Date, end: Date) => {
+  const getEventsDuringInterval = (interval: {start: Date, end: Date}) => {
     if (rid) return[]
 
     if (summary.includes('SLO Review')) {
       console.log('summary:', summary);
     }
 
-    const intervalFor = {start, end: sub(end, {seconds:1})}
+    const intervalFor = {start: interval.start, end: sub(interval.end, {seconds:1})}
     
     const instance = toInstance()
     const candidates = [instance, ...movedRecurrences.map(mr => mr.toInstance())]

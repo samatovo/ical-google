@@ -13,18 +13,18 @@ test('weekly event with moved event', () => {
   const icsString = readFileSync('./src/examples/moved-event.ics').toString()
   const ical = loadICal(icsString)
   
-  const oneDay = ical.getEventsDuringInterval(monday, tuesday)
+  const oneDay = ical.getEventsBetwen(monday, tuesday)
   expect(oneDay).toStartAt('2020-11-16T13:00:00Z')
   expect(oneDay).toBeIcsInstances(['Weekly'])
   
-  const twoDays = ical.getEventsDuringInterval(monday, wednesday)
+  const twoDays = ical.getEventsBetwen(monday, wednesday)
   expect(twoDays).toStartAt('2020-11-16T13:00:00Z')
 
-  const threeDays = ical.getEventsDuringInterval(monday, thursday)
+  const threeDays = ical.getEventsBetwen(monday, thursday)
   expect(threeDays).toStartAt('2020-11-16T13:00:00Z','2020-11-18T13:00:00Z','2020-11-18T15:00:00Z')
   expect(threeDays).toBeIcsInstances(['Weekly', 'Weekly', 'Weekly'])
   
-  const fiveDays = ical.getEventsDuringInterval(monday, saturday)
+  const fiveDays = ical.getEventsBetwen(monday, saturday)
   expect(fiveDays).toStartAt('2020-11-16T13:00:00Z','2020-11-18T13:00:00Z','2020-11-18T15:00:00Z', '2020-11-19T13:00:00Z','2020-11-20T13:00:00Z')
   expect(fiveDays).toBeIcsInstances(['Weekly', 'Weekly', 'Weekly', 'Weekly special', 'Weekly'])
 
