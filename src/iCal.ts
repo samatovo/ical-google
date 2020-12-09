@@ -1,4 +1,4 @@
-import { formatISO, getDate, isEqual, setDate, getWeekOfMonth } from "date-fns"
+import { formatISO, getDate, isEqual, setDate, getWeekOfMonth, endOfWeek, startOfWeek } from "date-fns"
 import add from "date-fns/add"
 import getISODay from "date-fns/getISODay"
 import startOfMonth  from "date-fns/startOfMonth"
@@ -193,12 +193,11 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
 
   if (!parts.FREQ) throw new Error("RRULE is missing FREQ");
   const freq = parts.FREQ; delete parts.FREQ
-  const byDay = parts.BYDAY; delete parts.BYDAY
+  
   const byMonthDay = parts.BYMONTHDAY; delete parts.BYMONTHDAY
   
   const weekStart = parts.WKST; delete parts.WKST
   
-  const interval = parseInt(parts.INTERVAL || '1'); delete parts.INTERVAL
   const count = parseInt(parts.COUNT || `${Number.MAX_SAFE_INTEGER}` ); delete parts.COUNT
   const until = parseIcsDate(parts.UNTIL || '99990101'); delete parts.UNTIL
 
@@ -221,8 +220,10 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
   }
 
   if (freq === 'DAILY') {
+    const interval = parseInt(parts.INTERVAL || '1'); delete parts.INTERVAL
     func = makeFunc([{days: interval}])
-  } else if (freq === 'WEEKLY' && byDay) {
+  } else if (freq === 'WEEKLY' && parts.BYDAY) {
+    const byDay = parts.BYDAY; delete parts.BYDAY
     // const dates = byMonthDay.split(',').map(x=>parseInt(x))
     const matchingDays = daysOfWeek
       .map((dow, i)=>({dow, i:i+1}))
@@ -235,17 +236,19 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
     })
     func = makeFunc([{days: 1}])
 
-    // skipIf = prev => getDayOfYear(prev.start) === getDayOfYear(endOfWeek(prev.start))
-    // skipperFunc = prev => {
-    //   const sowDate = getDate(startOfWeek(prev.start))
-    //   const start = add(setDate(prev.start, sowDate),  {weeks: interval})
-    //   return {
-    //     ...prev, 
-    //     start: start,
-    //     end: add(start, eventLength)
-    //   }
-    // }
+    const interval = parseInt(parts.INTERVAL || '1'); delete parts.INTERVAL
+    skipIf = prev => interval > 1 && getDayOfYear(prev.start) === getDayOfYear(endOfWeek(prev.start))
+    skipperFunc = prev => {
+      if (interval === 1) return prev
+      const start = add(prev.start,  {weeks: interval-1})
+      return {
+        ...prev, 
+        start: start,
+        end: add(start, eventLength)
+      }
+    }
   } else if (freq === 'WEEKLY') {
+    const interval = parseInt(parts.INTERVAL || '1'); delete parts.INTERVAL
     func = makeFunc([{weeks: interval}])
   } else if (freq === 'MONTHLY' && byMonthDay) {
     const dates = byMonthDay.split(',').map(x=>parseInt(x))
@@ -257,6 +260,7 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
     //   start: startOfMonth(add(prev.start, {months: interval})),
     //   end: startOfMonth(add(prev.end, {months: interval}))
     // })
+    const interval = parseInt(parts.INTERVAL || '1'); delete parts.INTERVAL
     skipperFunc = prev => {
       const somDate = getDate(startOfMonth(prev.start))
       const start = add(setDate(prev.start, somDate),  {months: interval})
@@ -267,7 +271,8 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
       }
     }
     //func = makeFunc(dates.map(offBy => ({days: offBy})))
-  } else if (freq === 'MONTHLY' && byDay) {
+  } else if (freq === 'MONTHLY' && parts.BYDAY) {
+    const byDay = parts.BYDAY; delete parts.BYDAY
     const validDays = byDay.split(',').map(x=>readDayOfMonth(x))
     filters.push(date => {
 
@@ -285,6 +290,7 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
     //   start: startOfMonth(add(prev.start, {months: interval})),
     //   end: startOfMonth(add(prev.end, {months: interval}))
     // })
+    const interval = parseInt(parts.INTERVAL || '1'); delete parts.INTERVAL
     skipperFunc = prev => {
       const somDate = getDate(startOfMonth(prev.start))
       const start = add(setDate(prev.start, somDate),  {months: interval})
@@ -296,11 +302,12 @@ export function readRRule(rrule: IcsLine, start: Date, eventLength: Interval) {
     }
     //func = makeFunc(dates.map(offBy => ({days: offBy})))
   } else if (freq === 'MONTHLY') {
+    const interval = parseInt(parts.INTERVAL || '1'); delete parts.INTERVAL
     func = makeFunc([{months: interval}])
   } else throw new Error("Unsupported FREQ:" + freq);
   
   const unusedKeys = Object.keys(parts)
-  if (unusedKeys.length > 0) throw new Error("rrule parameters not supported:"+unusedKeys);
+  if (unusedKeys.length > 0) throw new Error("rrule parameters not supported:"+unusedKeys+" in rule "+rrule.value);
 
   return {
     rrule: rrule.value,
